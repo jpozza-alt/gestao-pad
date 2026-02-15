@@ -153,7 +153,6 @@ def register():
 
 # Rota Principal (Dashboard)
 @app.route('/')
-@login_required
 def index():
     processos = Processo.query.order_by(Processo.data_autuacao.desc()).all()
     tarefas_agenda = Agenda.query.order_by(Agenda.concluida, Agenda.prazo.asc()).all()
@@ -180,7 +179,6 @@ def index():
 
 # Rotas de Gestão de Processos (CRUD)
 @app.route('/processo/adicionar', methods=['GET', 'POST'])
-@login_required
 def adicionar_processo():
     if request.method == 'POST':
         numero_processo_form = request.form['numero_processo']
@@ -220,14 +218,12 @@ def adicionar_processo():
     return render_template('adicionar_processo.html')
 
 @app.route('/processo/<int:processo_id>')
-@login_required
 def detalhes_processo(processo_id):
     processo = Processo.query.get_or_404(processo_id)
     andamentos_ordenados = sorted(processo.andamentos, key=lambda x: x.data, reverse=True)
     return render_template('detalhes_processo.html', processo=processo, andamentos_ordenados=andamentos_ordenados)
 
 @app.route('/processo/<int:processo_id>/editar', methods=['GET', 'POST'])
-@login_required
 def editar_processo(processo_id):
     processo = Processo.query.get_or_404(processo_id)
     if request.method == 'POST':
@@ -249,7 +245,6 @@ def editar_processo(processo_id):
     return render_template('editar_processo.html', processo=processo)
 
 @app.route('/processo/<int:processo_id>/excluir', methods=['POST'])
-@login_required
 def excluir_processo(processo_id):
     processo = Processo.query.get_or_404(processo_id)
     db.session.delete(processo)
@@ -259,7 +254,6 @@ def excluir_processo(processo_id):
 
 # Rotas de Andamentos
 @app.route('/processo/<int:processo_id>/avancar_etapa', methods=['POST'])
-@login_required
 def avancar_etapa(processo_id):
     processo = Processo.query.get_or_404(processo_id)
     nova_etapa = request.form.get('nova_etapa')
@@ -296,7 +290,6 @@ def avancar_etapa(processo_id):
 
 # Rotas da Agenda
 @app.route('/agenda/adicionar', methods=['POST'])
-@login_required
 def adicionar_tarefa_agenda():
     tarefa_texto = request.form.get('tarefa')
     prazo_str = request.form.get('prazo')
@@ -309,7 +302,6 @@ def adicionar_tarefa_agenda():
     return redirect(url_for('index'))
 
 @app.route('/agenda/concluir/<int:tarefa_id>')
-@login_required
 def concluir_tarefa(tarefa_id):
     tarefa = Agenda.query.get_or_404(tarefa_id)
     tarefa.concluida = not tarefa.concluida
@@ -317,7 +309,6 @@ def concluir_tarefa(tarefa_id):
     return redirect(url_for('index'))
 
 @app.route('/agenda/excluir/<int:tarefa_id>')
-@login_required
 def excluir_tarefa(tarefa_id):
     tarefa = Agenda.query.get_or_404(tarefa_id)
     db.session.delete(tarefa)
@@ -376,7 +367,6 @@ def generate_pdf_task(app_context, processo_id):
 
 
 @app.route('/processo/<int:processo_id>/exportar_documentos')
-@login_required
 def exportar_documentos(processo_id):
     thread = Thread(target=generate_pdf_task, args=(app.app_context(), processo_id))
     thread.start()
@@ -384,19 +374,16 @@ def exportar_documentos(processo_id):
     return redirect(url_for('detalhes_processo', processo_id=processo_id))
 
 @app.route('/relatorios')
-@login_required
 def relatorios_gerados():
     files = [f for f in os.listdir(app.config['REPORTS_FOLDER']) if f.endswith('.pdf')]
     files.sort(key=lambda x: os.path.getmtime(os.path.join(app.config['REPORTS_FOLDER'], x)), reverse=True)
     return render_template('relatorios.html', files=files)
 
 @app.route('/relatorios/<path:filename>')
-@login_required
 def download_relatorio(filename):
     return send_from_directory(app.config['REPORTS_FOLDER'], filename, as_attachment=True)
 
 @app.route('/uploads/<path:filename>')
-@login_required
 def download_file(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename, as_attachment=True)
 
@@ -406,4 +393,5 @@ if __name__ == "__main__":
     import os
     port = int(os.environ.get("PORT", 5000))
     app.run(host="0.0.0.0", port=port, debug=False)
+
 
